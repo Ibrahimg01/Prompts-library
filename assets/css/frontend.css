@@ -1,11 +1,681 @@
-.pl-wrap { padding: 10px; }
-.pl-filters { display:flex; gap:12px; margin-bottom:16px; }
-.pl-cards { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:16px; }
-.pl-card { border:1px solid #eee; padding:14px; border-radius:10px; }
-.pl-card h3 { margin:0 0 8px; font-size:16px; }
-@media (max-width: 900px) {
-  .pl-cards { grid-template-columns: repeat(2, minmax(0,1fr)); }
+/**
+ * Prompts Library Frontend Styles
+ * Modern, Clean, User-Friendly Interface
+ */
+
+/* ============================================
+   General Layout & Container
+   ============================================ */
+.prompts-library-wrap {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 0 20px;
+    background: #f8f9fa;
 }
+
+/* ============================================
+   Header Section (Purple Container)
+   ============================================ */
+.prompts-library-header {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+}
+
+.prompts-library-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.library-title {
+    font-size: 42px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.library-subtitle {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0 0 30px 0;
+    font-weight: 400;
+}
+
+.chatbot-container {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+/* ============================================
+   Filters Section
+   ============================================ */
+.prompts-library-filters {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-bar-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.prompts-search-input {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background: #f9fafb;
+}
+
+.prompts-search-input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.search-button {
+    padding: 14px 24px;
+    background: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-button:hover {
+    background: #7c3aed;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.search-button .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.filters-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #0D0D2B;
+    font-size: 14px;
+}
+
+.filter-select {
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #ffffff;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.filter-button {
+    padding: 12px 28px;
+    background: #0D0D2B;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 15px;
+}
+
+.filter-button:hover {
+    background: #1a1a3e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 13, 43, 0.3);
+}
+
+.clear-filters {
+    padding: 12px 24px;
+    color: #f65c4b;
+    text-decoration: none;
+    border: 2px solid #f65c4b;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-block;
+    font-size: 15px;
+}
+
+.clear-filters:hover {
+    background: #f65c4b;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   Prompts Grid
+   ============================================ */
+.prompts-library-grid {
+    display: grid;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.prompts-library-grid[data-cards-per-row="2"] {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.prompts-library-grid[data-cards-per-row="3"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.prompts-library-grid[data-cards-per-row="4"] {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1200px) {
+    .prompts-library-grid[data-cards-per-row="4"] {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .prompts-library-grid[data-cards-per-row="3"],
+    .prompts-library-grid[data-cards-per-row="4"] {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 600px) {
-  .pl-cards { grid-template-columns: 1fr; }
+    .prompts-library-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   Prompt Cards
+   ============================================ */
+.prompt-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: 1px solid #f0f0f0;
+}
+
+.prompt-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    border-color: #8b5cf6;
+}
+
+.card-header {
+    margin-bottom: 16px;
+    min-height: 32px;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0D0D2B;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+    min-height: 56px;
+}
+
+.card-description {
+    color: #6b7280;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 16px 0;
+    flex: 1;
+}
+
+.card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    min-height: 30px;
+}
+
+.tag-item {
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    text-decoration: none;
+}
+
+.btn .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.btn-primary {
+    background: #f65c4b;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #e14b3a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(246, 92, 75, 0.3);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #0D0D2B;
+    border: 2px solid #0D0D2B;
+}
+
+.btn-secondary:hover {
+    background: #0D0D2B;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   Pagination
+   ============================================ */
+.prompts-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 40px 0;
+}
+
+.page-link {
+    padding: 12px 18px;
+    background: #ffffff;
+    color: #0D0D2B;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background: #8b5cf6;
+    color: #ffffff;
+    border-color: #8b5cf6;
+    transform: translateY(-2px);
+}
+
+.page-link.current-page {
+    background: #8b5cf6;
+    color: #ffffff;
+    border-color: #8b5cf6;
+    pointer-events: none;
+}
+
+.prev-link,
+.next-link {
+    background: #f65c4b;
+    color: #ffffff;
+    border-color: #f65c4b;
+}
+
+.prev-link:hover,
+.next-link:hover {
+    background: #e14b3a;
+    border-color: #e14b3a;
+}
+
+/* ============================================
+   Modal
+   ============================================ */
+.prompt-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999999;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(13, 13, 43, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -45%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.modal-header {
+    padding: 30px 30px 20px 30px;
+    border-bottom: 2px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-category-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modal-close {
+    background: #f3f4f6;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: #f65c4b;
+    color: #ffffff;
+    transform: rotate(90deg);
+}
+
+.modal-close .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.modal-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0D0D2B;
+    margin: 0 0 16px 0;
+}
+
+.modal-description {
+    color: #6b7280;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0 0 30px 0;
+}
+
+.prompt-container {
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 30px;
+}
+
+.prompt-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 12px 0;
+}
+
+.prompt-text {
+    color: #0D0D2B;
+    font-size: 15px;
+    line-height: 1.8;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.modal-footer {
+    padding: 20px 30px 30px 30px;
+    display: flex;
+    gap: 15px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.modal-footer .btn {
+    flex: 1;
+    padding: 14px 24px;
+    font-size: 16px;
+}
+
+/* ============================================
+   No Prompts Message
+   ============================================ */
+.no-prompts {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.no-prompts p {
+    font-size: 18px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* ============================================
+   Loading State
+   ============================================ */
+.btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 0.6s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   Success Notification
+   ============================================ */
+.copy-success {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #10b981;
+    color: #ffffff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+    font-weight: 600;
+    z-index: 1000000;
+    animation: slideInUp 0.3s ease;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+    .library-title {
+        font-size: 32px;
+    }
+
+    .library-subtitle {
+        font-size: 16px;
+    }
+
+    .prompts-library-header {
+        padding: 30px 20px;
+    }
+
+    .prompts-library-filters {
+        padding: 20px;
+    }
+
+    .filters-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    .card-actions {
+        flex-direction: column;
+    }
 }
