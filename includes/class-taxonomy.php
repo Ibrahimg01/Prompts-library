@@ -46,9 +46,25 @@ class Prompts_Library_Taxonomy {
     }
 
     /**
+     * Get taxonomy capability mapping.
+     *
+     * @return array
+     */
+    public static function get_capabilities() {
+        return array(
+            'manage_terms' => 'manage_prompt_terms',
+            'edit_terms'   => 'edit_prompt_terms',
+            'delete_terms' => 'delete_prompt_terms',
+            'assign_terms' => 'assign_prompt_terms',
+        );
+    }
+
+    /**
      * Register taxonomies
      */
     public static function register_taxonomies() {
+        $is_main_site = is_main_site();
+
         // Register Category Taxonomy
         $category_labels = array(
             'name'                       => _x( 'Categories', 'Taxonomy General Name', 'prompts-library' ),
@@ -77,11 +93,12 @@ class Prompts_Library_Taxonomy {
             'labels'                     => $category_labels,
             'hierarchical'               => true,
             'public'                     => false,
-            'show_ui'                    => true,
-            'show_admin_column'          => true,
+            'show_ui'                    => $is_main_site,
+            'show_admin_column'          => $is_main_site,
             'show_in_nav_menus'          => false,
             'show_tagcloud'              => false,
             'show_in_rest'               => false,
+            'capabilities'               => self::get_capabilities(),
         );
 
         register_taxonomy( 'prompt_category', array( 'prompt' ), $category_args );
@@ -114,11 +131,12 @@ class Prompts_Library_Taxonomy {
             'labels'                     => $tag_labels,
             'hierarchical'               => false,
             'public'                     => false,
-            'show_ui'                    => true,
-            'show_admin_column'          => true,
+            'show_ui'                    => $is_main_site,
+            'show_admin_column'          => $is_main_site,
             'show_in_nav_menus'          => false,
             'show_tagcloud'              => false,
             'show_in_rest'               => false,
+            'capabilities'               => self::get_capabilities(),
         );
 
         register_taxonomy( 'prompt_tag', array( 'prompt' ), $tag_args );
