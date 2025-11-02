@@ -21,7 +21,7 @@
             $(document).on('click', '.view-prompt', this.openModal.bind(this));
 
             // Use prompt button (from card)
-            $(document).on('click', '.prompt-card .use-prompt', this.usePromptDirect.bind(this));
+            $(document).on('click', '.use-prompt', this.usePromptDirect.bind(this));
 
             // Use prompt button (from modal)
             $(document).on('click', '.use-prompt-modal', this.usePromptFromModal.bind(this));
@@ -56,7 +56,24 @@
             // Show loading state
             $button.addClass('loading');
 
-            // Get prompt details via AJAX
+            this.requestPromptDetails(
+                promptId,
+                function(data) {
+                    PromptsLibrary.displayModal(data);
+                },
+                function(message) {
+                    alert(message || 'Error loading prompt');
+                },
+                function() {
+                    $button.removeClass('loading');
+                }
+            );
+        },
+
+        /**
+         * Shared helper to fetch prompt data via AJAX
+         */
+        requestPromptDetails: function(promptId, onSuccess, onError, onComplete) {
             $.ajax({
                 url: promptsLibrary.ajaxUrl,
                 type: 'POST',
@@ -66,17 +83,24 @@
                     nonce: promptsLibrary.nonce
                 },
                 success: function(response) {
-                    if (response.success) {
-                        PromptsLibrary.displayModal(response.data);
-                    } else {
-                        alert(response.data.message || 'Error loading prompt');
+                    if (response && response.success) {
+                        if (typeof onSuccess === 'function') {
+                            onSuccess(response.data);
+                        }
+                    } else if (typeof onError === 'function') {
+                        const message = response && response.data ? response.data.message : null;
+                        onError(message);
                     }
                 },
                 error: function() {
-                    alert('Error loading prompt. Please try again.');
+                    if (typeof onError === 'function') {
+                        onError('Error loading prompt. Please try again.');
+                    }
                 },
                 complete: function() {
-                    $button.removeClass('loading');
+                    if (typeof onComplete === 'function') {
+                        onComplete();
+                    }
                 }
             });
         },
@@ -100,10 +124,11 @@
             $('.modal-description').text(data.description);
 
             // Set prompt text
-            $('.prompt-text').text(data.prompt_text);
+            const normalizedPrompt = this.normalizePromptText(data.prompt_text);
+            $('.prompt-text').text(normalizedPrompt);
 
             // Store prompt text for later use
-            $modal.data('prompt-text', data.prompt_text);
+            $modal.data('prompt-text', normalizedPrompt);
 
             // Show modal
             $modal.fadeIn(300);
@@ -124,34 +149,34 @@
         usePromptDirect: function(e) {
             e.preventDefault();
             const $button = $(e.currentTarget);
-            const promptId = $button.data('prompt-id');
+            const promptText = this.getPromptFromElement($button);
 
-            // Show loading state
+            if (promptText) {
+                this.insertPromptToChatbot(promptText);
+                return;
+            }
+
+            const promptId = $button.data('prompt-id');
+            if (!promptId) {
+                console.warn('[Prompts Library] Missing prompt identifier.');
+                return;
+            }
+
             $button.addClass('loading');
 
-            // Get prompt details via AJAX
-            $.ajax({
-                url: promptsLibrary.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'get_prompt_details',
-                    prompt_id: promptId,
-                    nonce: promptsLibrary.nonce
+            this.requestPromptDetails(
+                promptId,
+                function(data) {
+                    const normalized = PromptsLibrary.normalizePromptText(data.prompt_text);
+                    PromptsLibrary.insertPromptToChatbot(normalized);
                 },
-                success: function(response) {
-                    if (response.success) {
-                        PromptsLibrary.insertPromptToChatbot(response.data.prompt_text);
-                    } else {
-                        alert(response.data.message || 'Error loading prompt');
-                    }
+                function(message) {
+                    alert(message || 'Error loading prompt');
                 },
-                error: function() {
-                    alert('Error loading prompt. Please try again.');
-                },
-                complete: function() {
+                function() {
                     $button.removeClass('loading');
                 }
-            });
+            );
         },
 
         /**
@@ -160,7 +185,7 @@
         usePromptFromModal: function(e) {
             e.preventDefault();
             const $modal = $('#prompt-modal');
-            const promptText = $modal.data('prompt-text');
+            const promptText = this.normalizePromptText($modal.data('prompt-text'));
 
             if (promptText) {
                 this.insertPromptToChatbot(promptText);
@@ -169,9 +194,49 @@
         },
 
         /**
+         * Retrieve prompt payload from a button/card dataset
+         */
+        getPromptFromElement: function($element) {
+            if (!$element || $element.length === 0) {
+                return '';
+            }
+
+            let prompt = $element.data('prompt');
+
+            if (!prompt) {
+                const $card = $element.closest('.pl-card');
+                if ($card.length) {
+                    prompt = $card.data('prompt');
+                }
+            }
+
+            if (!prompt) {
+                return '';
+            }
+
+            return this.normalizePromptText(prompt);
+        },
+
+        /**
+         * Normalize prompt text (quotes/newlines)
+         */
+        normalizePromptText: function(promptText) {
+            if (!promptText) {
+                return '';
+            }
+
+            return String(promptText)
+                .replace(/\r\n/g, '\n')
+                .replace(/[“”]/g, '"')
+                .replace(/[‘’]/g, "'");
+        },
+
+        /**
          * Insert prompt into chatbot
          */
         insertPromptToChatbot: function(promptText) {
+            const text = this.normalizePromptText(promptText);
+
             // Try multiple selectors for different chatbot implementations
             const selectors = [
                 'textarea[name="mwai_chat_input"]',
@@ -193,7 +258,7 @@
 
             if ($input && $input.length > 0) {
                 // Set the value
-                $input.val(promptText);
+                $input.val(text);
                 
                 // Trigger events to ensure the chatbot recognizes the input
                 $input.trigger('input');
@@ -209,7 +274,7 @@
                 this.showSuccessMessage('Prompt loaded into chatbot!');
             } else {
                 // If chatbot not found, copy to clipboard as fallback
-                this.copyToClipboard(promptText);
+                this.copyToClipboard(text);
                 this.showSuccessMessage('Chatbot input not found. Prompt copied to clipboard!');
             }
         },
@@ -220,7 +285,7 @@
         copyPrompt: function(e) {
             e.preventDefault();
             const $modal = $('#prompt-modal');
-            const promptText = $modal.data('prompt-text');
+            const promptText = this.normalizePromptText($modal.data('prompt-text'));
 
             if (promptText) {
                 PromptsLibrary.copyToClipboard(promptText);
