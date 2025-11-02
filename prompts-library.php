@@ -3,7 +3,7 @@
  * Plugin Name: Premium Prompts Library
  * Plugin URI: Informationsystems.io
  * Description: A comprehensive prompts library system for WordPress Multisite with elegant UI and chatbot integration
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Information Systems
  * Author URI: Informationsystems.io
  * License: GPL v2 or later
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'PROMPTS_LIBRARY_VERSION', '1.0.0' );
+define( 'PROMPTS_LIBRARY_VERSION', '1.0.1' );
 define( 'PROMPTS_LIBRARY_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PROMPTS_LIBRARY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'PROMPTS_LIBRARY_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
