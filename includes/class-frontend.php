@@ -298,50 +298,68 @@ class Prompts_Library_Frontend {
                 <?php if ( $query->have_posts() ) : ?>
                     <?php while ( $query->have_posts() ) : $query->the_post(); ?>
                         <?php
-                        $prompt_id = get_the_ID();
-                        $description = get_post_meta( $prompt_id, '_prompt_description', true );
-                        $prompt_text = get_post_meta( $prompt_id, '_prompt_text', true );
+                        $prompt_id         = get_the_ID();
+                        $raw_description   = get_post_meta( $prompt_id, 'pl_short_description', true );
+                        if ( '' === $raw_description ) {
+                            $raw_description = get_post_meta( $prompt_id, '_prompt_description', true );
+                        }
+                        $description       = trim( (string) $raw_description );
+                        $prompt_text_value = get_post_meta( $prompt_id, 'pl_prompt_text', true );
+                        if ( '' === $prompt_text_value ) {
+                            $prompt_text_value = get_post_meta( $prompt_id, '_prompt_text', true );
+                        }
+                        $prompt_text      = (string) $prompt_text_value;
                         $prompt_categories = get_the_terms( $prompt_id, 'prompt_category' );
-                        $prompt_tags = get_the_terms( $prompt_id, 'prompt_tag' );
+                        $primary_category  = ( ! is_wp_error( $prompt_categories ) && ! empty( $prompt_categories ) ) ? array_shift( $prompt_categories ) : null;
+                        $prompt_tags       = get_the_terms( $prompt_id, 'prompt_tag' );
+
+                        $cat_name = $primary_category ? $primary_category->name : '';
+                        $cat_slug = $primary_category ? $primary_category->slug : '';
+                        $cat_color = '';
+
+                        if ( $primary_category instanceof WP_Term ) {
+                            $stored_color = get_term_meta( $primary_category->term_id, 'category_color', true );
+                            if ( ! empty( $stored_color ) ) {
+                                $cat_color = sanitize_hex_color( $stored_color );
+                            }
+                        }
                         ?>
-                        <div class="prompt-card" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>">
-                            <div class="card-header">
-                                <?php if ( $prompt_categories && ! is_wp_error( $prompt_categories ) ) : ?>
-                                    <?php foreach ( $prompt_categories as $cat ) : ?>
-                                        <?php
-                                        $cat_color = get_term_meta( $cat->term_id, 'category_color', true );
-                                        if ( empty( $cat_color ) ) {
-                                            $cat_color = '#8b5cf6';
-                                        }
-                                        ?>
-                                        <span class="category-badge" style="background-color: <?php echo esc_attr( $cat_color ); ?>;">
-                                            <?php echo esc_html( $cat->name ); ?>
-                                        </span>
-                                    <?php endforeach; ?>
+                        <div class="pl-card" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>" data-prompt="<?php echo esc_attr( $prompt_text ); ?>">
+                            <div class="pl-card-body">
+                                <?php if ( $cat_name ) : ?>
+                                    <?php
+                                    $badge_classes = 'pl-badge pl-badge--cat';
+                                    if ( $cat_slug ) {
+                                        $badge_classes .= ' pl-badge--' . sanitize_html_class( $cat_slug );
+                                    }
+                                    ?>
+                                    <span class="<?php echo esc_attr( $badge_classes ); ?>"<?php echo $cat_color ? ' style="background-color: ' . esc_attr( $cat_color ) . ';"' : ''; ?>>
+                                        <?php echo esc_html( $cat_name ); ?>
+                                    </span>
                                 <?php endif; ?>
-                            </div>
 
-                            <h3 class="card-title"><?php the_title(); ?></h3>
-                            
-                            <p class="card-description"><?php echo esc_html( $description ); ?></p>
+                                <h3 class="pl-card-title"><?php the_title(); ?></h3>
 
-                            <?php if ( $prompt_tags && ! is_wp_error( $prompt_tags ) ) : ?>
-                                <div class="card-tags">
-                                    <?php foreach ( $prompt_tags as $tag_item ) : ?>
-                                        <span class="tag-item"><?php echo esc_html( $tag_item->name ); ?></span>
-                                    <?php endforeach; ?>
+                                <?php if ( $description ) : ?>
+                                    <p class="pl-card-desc"><?php echo esc_html( $description ); ?></p>
+                                <?php endif; ?>
+
+                                <?php if ( $prompt_tags && ! is_wp_error( $prompt_tags ) ) : ?>
+                                    <div class="pl-tags">
+                                        <?php foreach ( $prompt_tags as $tag_item ) : ?>
+                                            <span class="pl-tag"><?php echo esc_html( $tag_item->name ); ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="pl-card-actions">
+                                    <button type="button" class="pl-btn pl-btn--ghost view-prompt" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>">
+                                        <?php esc_html_e( 'View Prompt', 'prompts-library' ); ?>
+                                    </button>
+                                    <button type="button" class="pl-btn pl-btn--primary use-prompt pl-use-prompt" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>" data-prompt="<?php echo esc_attr( $prompt_text ); ?>">
+                                        <?php esc_html_e( 'Use Prompt', 'prompts-library' ); ?>
+                                    </button>
                                 </div>
-                            <?php endif; ?>
-
-                            <div class="card-actions">
-                                <button class="btn btn-secondary view-prompt" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>">
-                                    <span class="dashicons dashicons-visibility"></span>
-                                    <?php esc_html_e( 'View Prompt', 'prompts-library' ); ?>
-                                </button>
-                                <button class="btn btn-primary use-prompt" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>">
-                                    <span class="dashicons dashicons-controls-play"></span>
-                                    <?php esc_html_e( 'Use Prompt', 'prompts-library' ); ?>
-                                </button>
                             </div>
                         </div>
                     <?php endwhile; ?>
