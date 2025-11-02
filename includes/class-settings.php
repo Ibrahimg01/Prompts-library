@@ -1,50 +1,67 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
+/**
+ * Settings Handler
+ *
+ * @package Prompts_Library
+ */
 
-class PL_Settings {
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 
-    public function __construct() {
-        if ( is_network_admin() ) {
-            add_action( 'network_admin_menu', array( $this, 'register_page' ) );
+/**
+ * Settings Class
+ */
+class Prompts_Library_Settings {
+
+    /**
+     * Single instance
+     *
+     * @var Prompts_Library_Settings
+     */
+    private static $instance = null;
+
+    /**
+     * Get instance
+     *
+     * @return Prompts_Library_Settings
+     */
+    public static function get_instance() {
+        if ( null === self::$instance ) {
+            self::$instance = new self();
         }
+        return self::$instance;
     }
 
-    public static function render_page() {
-        if ( ! current_user_can( 'manage_network_options' ) ) return;
-
-        if ( isset( $_POST['pl_settings_nonce'] ) && wp_verify_nonce( $_POST['pl_settings_nonce'], 'pl_save_settings' ) ) {
-            // Example: per-page count
-            $per_page = isset($_POST['pl_per_page']) ? max(1, (int) $_POST['pl_per_page']) : 9;
-            update_site_option( 'pl_per_page', $per_page );
-            echo '<div class="updated"><p>'.esc_html__('Saved.','prompts-library').'</p></div>';
-        }
-
-        $per_page = (int) get_site_option( 'pl_per_page', 9 );
-        ?>
-        <div class="wrap">
-            <h1><?php esc_html_e('Prompts Library Settings','prompts-library'); ?></h1>
-            <form method="post">
-                <?php wp_nonce_field( 'pl_save_settings', 'pl_settings_nonce' ); ?>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><label for="pl_per_page"><?php esc_html_e('Prompts Per Page','prompts-library'); ?></label></th>
-                        <td><input type="number" min="1" id="pl_per_page" name="pl_per_page" value="<?php echo esc_attr( $per_page ); ?>" /></td>
-                    </tr>
-                </table>
-                <?php submit_button(); ?>
-            </form>
-        </div>
-        <?php
+    /**
+     * Constructor
+     */
+    private function __construct() {
+        // Settings are handled in the admin menu class
     }
 
-    public function register_page() {
-        add_submenu_page(
-            'prompts-library',
-            __( 'Settings', 'prompts-library' ),
-            __( 'Settings', 'prompts-library' ),
-            'manage_network_options',
-            'prompts-library-settings',
-            array( __CLASS__, 'render_page' )
-        );
+    /**
+     * Get setting
+     *
+     * @param string $key Setting key.
+     * @param mixed  $default Default value.
+     * @return mixed
+     */
+    public static function get_setting( $key, $default = '' ) {
+        $settings = get_site_option( 'prompts_library_settings', array() );
+        return isset( $settings[ $key ] ) ? $settings[ $key ] : $default;
+    }
+
+    /**
+     * Update setting
+     *
+     * @param string $key Setting key.
+     * @param mixed  $value Setting value.
+     */
+    public static function update_setting( $key, $value ) {
+        $settings = get_site_option( 'prompts_library_settings', array() );
+        $settings[ $key ] = $value;
+        update_site_option( 'prompts_library_settings', $settings );
     }
 }
