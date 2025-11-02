@@ -59,7 +59,7 @@ class Prompts_Library_Frontend {
         wp_enqueue_script(
             'prompts-library-frontend',
             PROMPTS_LIBRARY_PLUGIN_URL . 'assets/js/frontend.js',
-            array( 'jquery' ),
+            array(),
             PROMPTS_LIBRARY_VERSION,
             true
         );
@@ -298,33 +298,54 @@ class Prompts_Library_Frontend {
                 <?php if ( $query->have_posts() ) : ?>
                     <?php while ( $query->have_posts() ) : $query->the_post(); ?>
                         <?php
-                        $prompt_id         = get_the_ID();
-                        $raw_description   = get_post_meta( $prompt_id, 'pl_short_description', true );
-                        if ( '' === $raw_description ) {
-                            $raw_description = get_post_meta( $prompt_id, '_prompt_description', true );
-                        }
-                        $description       = trim( (string) $raw_description );
-                        $prompt_text_value = get_post_meta( $prompt_id, 'pl_prompt_text', true );
-                        if ( '' === $prompt_text_value ) {
-                            $prompt_text_value = get_post_meta( $prompt_id, '_prompt_text', true );
-                        }
-                        $prompt_text      = (string) $prompt_text_value;
-                        $prompt_categories = get_the_terms( $prompt_id, 'prompt_category' );
-                        $primary_category  = ( ! is_wp_error( $prompt_categories ) && ! empty( $prompt_categories ) ) ? array_shift( $prompt_categories ) : null;
-                        $prompt_tags       = get_the_terms( $prompt_id, 'prompt_tag' );
+                        $prompt_id = get_the_ID();
+                        $title     = get_the_title( $prompt_id );
 
-                        $cat_name = $primary_category ? $primary_category->name : '';
-                        $cat_slug = $primary_category ? $primary_category->slug : '';
-                        $cat_color = '';
+                        $prompt_meta_keys = array(
+                            'pl_prompt_text',
+                            '_prompt_text',
+                            'pl_prompt',
+                            'prompt_text',
+                            'plp_prompt',
+                        );
 
-                        if ( $primary_category instanceof WP_Term ) {
-                            $stored_color = get_term_meta( $primary_category->term_id, 'category_color', true );
-                            if ( ! empty( $stored_color ) ) {
-                                $cat_color = sanitize_hex_color( $stored_color );
+                        $prompt = '';
+                        foreach ( $prompt_meta_keys as $meta_key ) {
+                            $prompt = (string) get_post_meta( $prompt_id, $meta_key, true );
+                            if ( '' !== $prompt ) {
+                                break;
                             }
                         }
+
+                        $description_meta_keys = array(
+                            'pl_short_description',
+                            '_prompt_description',
+                            'pl_desc',
+                            'short_desc',
+                            'plp_short_description',
+                        );
+
+                        $description = '';
+                        foreach ( $description_meta_keys as $meta_key ) {
+                            $description = trim( (string) get_post_meta( $prompt_id, $meta_key, true ) );
+                            if ( '' !== $description ) {
+                                break;
+                            }
+                        }
+
+                        $prompt_categories = get_the_terms( $prompt_id, 'prompt_category' );
+                        $primary_category  = null;
+
+                        if ( ! is_wp_error( $prompt_categories ) && ! empty( $prompt_categories ) ) {
+                            $primary_category = array_shift( $prompt_categories );
+                        }
+                        $cat_name          = ( $primary_category instanceof WP_Term ) ? $primary_category->name : '';
+                        $cat_slug          = ( $primary_category instanceof WP_Term ) ? $primary_category->slug : '';
+
+                        $prompt_tags = get_the_terms( $prompt_id, 'prompt_tag' );
+                        $permalink   = get_permalink( $prompt_id );
                         ?>
-                        <div class="pl-card" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>" data-prompt="<?php echo esc_attr( $prompt_text ); ?>">
+                        <div class="pl-card" data-post-id="<?php echo esc_attr( $prompt_id ); ?>" data-prompt="<?php echo esc_attr( $prompt ); ?>">
                             <div class="pl-card-body">
                                 <?php if ( $cat_name ) : ?>
                                     <?php
@@ -333,18 +354,18 @@ class Prompts_Library_Frontend {
                                         $badge_classes .= ' pl-badge--' . sanitize_html_class( $cat_slug );
                                     }
                                     ?>
-                                    <span class="<?php echo esc_attr( $badge_classes ); ?>"<?php echo $cat_color ? ' style="background-color: ' . esc_attr( $cat_color ) . ';"' : ''; ?>>
+                                    <span class="<?php echo esc_attr( $badge_classes ); ?>">
                                         <?php echo esc_html( $cat_name ); ?>
                                     </span>
                                 <?php endif; ?>
 
-                                <h3 class="pl-card-title"><?php the_title(); ?></h3>
+                                <h3 class="pl-card-title"><?php echo esc_html( $title ); ?></h3>
 
                                 <?php if ( $description ) : ?>
                                     <p class="pl-card-desc"><?php echo esc_html( $description ); ?></p>
                                 <?php endif; ?>
 
-                                <?php if ( $prompt_tags && ! is_wp_error( $prompt_tags ) ) : ?>
+                                <?php if ( ! is_wp_error( $prompt_tags ) && ! empty( $prompt_tags ) ) : ?>
                                     <div class="pl-tags">
                                         <?php foreach ( $prompt_tags as $tag_item ) : ?>
                                             <span class="pl-tag"><?php echo esc_html( $tag_item->name ); ?></span>
@@ -353,10 +374,12 @@ class Prompts_Library_Frontend {
                                 <?php endif; ?>
 
                                 <div class="pl-card-actions">
-                                    <button type="button" class="pl-btn pl-btn--ghost view-prompt" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>">
-                                        <?php esc_html_e( 'View Prompt', 'prompts-library' ); ?>
-                                    </button>
-                                    <button type="button" class="pl-btn pl-btn--primary use-prompt pl-use-prompt" data-prompt-id="<?php echo esc_attr( $prompt_id ); ?>" data-prompt="<?php echo esc_attr( $prompt_text ); ?>">
+                                    <?php if ( $permalink ) : ?>
+                                        <a class="pl-btn pl-btn--ghost" href="<?php echo esc_url( $permalink ); ?>">
+                                            <?php esc_html_e( 'View Prompt', 'prompts-library' ); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                    <button type="button" class="pl-btn pl-btn--primary pl-use-prompt" data-prompt="<?php echo esc_attr( $prompt ); ?>">
                                         <?php esc_html_e( 'Use Prompt', 'prompts-library' ); ?>
                                     </button>
                                 </div>

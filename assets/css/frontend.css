@@ -404,34 +404,29 @@
    New Prompt Card Layout
    ============================================ */
 .pl-card {
-    border: 1px solid #eeeeee;
+    border: 1px solid #eee;
     border-radius: 14px;
     padding: 16px;
-    background: #ffffff;
-    height: 100%;
+    background: #fff;
 }
 
 .pl-card-body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    height: 100%;
 }
 
 .pl-badge {
     display: inline-block;
     font-size: 12px;
-    line-height: 1;
     padding: 6px 10px;
     border-radius: 999px;
     font-weight: 600;
-}
-
-.pl-badge--cat {
     background: rgba(0, 0, 0, 0.06);
 }
 
-/* Example category colors */
+.pl-badge--cat {}
+
 .pl-badge--copywriting {
     background: #e9f0ff;
     color: #1449a3;
@@ -456,9 +451,13 @@
 
 .pl-card-desc {
     margin: 0;
-    color: #444444;
+    color: #444;
     font-size: 14px;
     line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .pl-tags {
@@ -477,7 +476,7 @@
 .pl-card-actions {
     display: flex;
     gap: 10px;
-    margin-top: auto;
+    margin-top: 6px;
 }
 
 .pl-btn {
@@ -491,18 +490,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 1;
 }
 
 .pl-btn--primary {
     background: #111827;
-    color: #ffffff;
+    color: #fff;
 }
 
 .pl-btn--ghost {
     background: transparent;
     color: #111827;
-    border: 1px solid #111827;
+    text-decoration: none;
 }
 
 .pl-btn--ghost:hover,
