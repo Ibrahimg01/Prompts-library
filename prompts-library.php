@@ -75,7 +75,7 @@ class Prompts_Library {
      */
     private function init_hooks() {
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
-        add_action( 'init', array( $this, 'init' ) );
+        add_action( 'plugins_loaded', array( $this, 'bootstrap_components' ) );
         register_activation_hook( __FILE__, array( $this, 'activate' ) );
         register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
     }
@@ -88,9 +88,9 @@ class Prompts_Library {
     }
 
     /**
-     * Initialize plugin
+     * Initialize plugin components.
      */
-    public function init() {
+    public function bootstrap_components() {
         Prompts_Library_Post_Type::get_instance();
         Prompts_Library_Taxonomy::get_instance();
         Prompts_Library_Admin_Menu::get_instance();
