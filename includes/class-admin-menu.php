@@ -1,38 +1,62 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
+/**
+ * Admin Menu Handler
+ *
+ * @package Prompts_Library
+ */
 
-class PL_Admin_Menu {
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 
-    public function __construct() {
-        add_action( 'network_admin_menu', array( $this, 'add_network_admin_menu' ) ); // Super Admin
-        add_action( 'admin_menu', array( $this, 'add_subsite_admin_menu' ) );        // Site admins
-    }
+/**
+ * Admin Menu Class
+ */
+class Prompts_Library_Admin_Menu {
 
     /**
-     * Redirect to a specific admin path on the MAIN site.
-     * $path like 'edit.php?post_type=prompt'
+     * Single instance
+     *
+     * @var Prompts_Library_Admin_Menu
      */
-    protected function redirect_to_main_site_admin( $path ) {
-        $main_id = function_exists('get_main_site_id') ? get_main_site_id() : 1;
-        $url = get_admin_url( $main_id, ltrim( $path, '/' ) );
-        wp_safe_redirect( $url );
-        exit;
+    private static $instance = null;
+
+    /**
+     * Get instance
+     *
+     * @return Prompts_Library_Admin_Menu
+     */
+    public static function get_instance() {
+        if ( null === self::$instance ) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 
     /**
-     * Network Admin (Super Admin): section + links that open main site editors.
+     * Constructor
+     */
+    private function __construct() {
+        if ( is_main_site() ) {
+            add_action( 'network_admin_menu', array( $this, 'add_network_admin_menu' ) );
+        } else {
+            add_action( 'admin_menu', array( $this, 'add_subsite_admin_menu' ) );
+        }
+    }
+
+    /**
+     * Add network admin menu (Super Admin)
      */
     public function add_network_admin_menu() {
-        if ( ! is_multisite() || ! is_network_admin() ) return;
-
         add_menu_page(
             __( 'Prompts Library', 'prompts-library' ),
             __( 'Prompts Library', 'prompts-library' ),
             'manage_network',
             'prompts-library',
-            array( $this, 'render_network_dashboard' ),
+            array( $this, 'render_admin_page' ),
             'dashicons-editor-quote',
-            60
+            30
         );
 
         add_submenu_page(
@@ -40,8 +64,7 @@ class PL_Admin_Menu {
             __( 'All Prompts', 'prompts-library' ),
             __( 'All Prompts', 'prompts-library' ),
             'manage_network',
-            'prompts-library-all',
-            array( $this, 'render_network_all_prompts' )
+            'edit.php?post_type=prompt'
         );
 
         add_submenu_page(
@@ -49,8 +72,7 @@ class PL_Admin_Menu {
             __( 'Add New', 'prompts-library' ),
             __( 'Add New', 'prompts-library' ),
             'manage_network',
-            'prompts-library-add',
-            array( $this, 'render_network_add_new' )
+            'post-new.php?post_type=prompt'
         );
 
         add_submenu_page(
@@ -58,8 +80,7 @@ class PL_Admin_Menu {
             __( 'Categories', 'prompts-library' ),
             __( 'Categories', 'prompts-library' ),
             'manage_network',
-            'prompts-library-categories',
-            array( $this, 'render_network_categories' )
+            'edit-tags.php?taxonomy=prompt_category&post_type=prompt'
         );
 
         add_submenu_page(
@@ -67,103 +88,155 @@ class PL_Admin_Menu {
             __( 'Tags', 'prompts-library' ),
             __( 'Tags', 'prompts-library' ),
             'manage_network',
-            'prompts-library-tags',
-            array( $this, 'render_network_tags' )
+            'edit-tags.php?taxonomy=prompt_tag&post_type=prompt'
         );
 
         add_submenu_page(
             'prompts-library',
             __( 'Settings', 'prompts-library' ),
             __( 'Settings', 'prompts-library' ),
-            'manage_network_options',
+            'manage_network',
             'prompts-library-settings',
-            array( $this, 'render_network_settings' )
+            array( $this, 'render_settings_page' )
         );
     }
 
-    public function render_network_dashboard() {
-        // Counters (safe)
-        $prompts_count = wp_count_posts( 'prompt' );
-        $categories_raw = wp_count_terms( array( 'taxonomy' => 'prompt_category' ) );
-        $tags_raw       = wp_count_terms( array( 'taxonomy' => 'prompt_tag' ) );
+    /**
+     * Add subsite admin menu (Tenant Admin)
+     */
+    public function add_subsite_admin_menu() {
+        add_menu_page(
+            __( 'Prompts Library', 'prompts-library' ),
+            __( 'Prompts Library', 'prompts-library' ),
+            'edit_posts',
+            'prompts-library-view',
+            array( $this, 'render_frontend_page' ),
+            'dashicons-editor-quote',
+            30
+        );
+    }
 
-        $categories_count = is_wp_error( $categories_raw ) ? 0 : (int) $categories_raw;
-        $tags_count       = is_wp_error( $tags_raw )       ? 0 : (int) $tags_raw;
-
-        $pl_drafts    = isset( $prompts_count->draft )   ? (int) $prompts_count->draft   : 0;
-        $pl_published = isset( $prompts_count->publish ) ? (int) $prompts_count->publish : 0;
-
+    /**
+     * Render admin page
+     */
+    public function render_admin_page() {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'Prompts Library - Super Admin', 'prompts-library' ); ?></h1>
+            <p><?php esc_html_e( 'Manage all prompts, categories, and tags from the submenus. You can publish prompts to specific subsites when editing each prompt.', 'prompts-library' ); ?></p>
+            
+            <div class="prompts-dashboard">
+                <?php
+                $prompts_count = wp_count_posts( 'prompt' );
+                $categories_count = wp_count_terms( array( 'taxonomy' => 'prompt_category' ) );
+                $tags_count = wp_count_terms( array( 'taxonomy' => 'prompt_tag' ) );
+                ?>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px;">
+                    <div style="background: #fff; padding: 20px; border-left: 4px solid #8b5cf6; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 10px 0; color: #0D0D2B;"><?php esc_html_e( 'Total Prompts', 'prompts-library' ); ?></h3>
+                        <p style="font-size: 32px; font-weight: 700; margin: 0; color: #8b5cf6;">
+                            <?php echo esc_html( $prompts_count->publish + $prompts_count->draft ); ?>
+                        </p>
+                    </div>
+                    <div style="background: #fff; padding: 20px; border-left: 4px solid #f65c4b; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 10px 0; color: #0D0D2B;"><?php esc_html_e( 'Categories', 'prompts-library' ); ?></h3>
+                        <p style="font-size: 32px; font-weight: 700; margin: 0; color: #f65c4b;">
+                            <?php echo esc_html( $categories_count ); ?>
+                        </p>
+                    </div>
+                    <div style="background: #fff; padding: 20px; border-left: 4px solid #0D0D2B; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 10px 0; color: #0D0D2B;"><?php esc_html_e( 'Tags', 'prompts-library' ); ?></h3>
+                        <p style="font-size: 32px; font-weight: 700; margin: 0; color: #0D0D2B;">
+                            <?php echo esc_html( $tags_count ); ?>
+                        </p>
+                    </div>
+                </div>
 
-            <div style="display:flex; gap:24px; margin:24px 0;">
-                <div style="flex:1; padding:16px; border:1px solid #eee;">
-                    <h3><?php esc_html_e('Total Prompts','prompts-library'); ?></h3>
-                    <div style="font-size:32px;"><?php echo esc_html( $pl_drafts + $pl_published ); ?></div>
-                </div>
-                <div style="flex:1; padding:16px; border:1px solid #eee;">
-                    <h3><?php esc_html_e('Categories','prompts-library'); ?></h3>
-                    <div style="font-size:32px;"><?php echo esc_html( $categories_count ); ?></div>
-                </div>
-                <div style="flex:1; padding:16px; border:1px solid #eee;">
-                    <h3><?php esc_html_e('Tags','prompts-library'); ?></h3>
-                    <div style="font-size:32px;"><?php echo esc_html( $tags_count ); ?></div>
+                <div style="margin-top: 30px;">
+                    <h2><?php esc_html_e( 'Quick Actions', 'prompts-library' ); ?></h2>
+                    <a href="<?php echo esc_url( network_admin_url( 'post-new.php?post_type=prompt' ) ); ?>" class="button button-primary button-large">
+                        <?php esc_html_e( 'Add New Prompt', 'prompts-library' ); ?>
+                    </a>
+                    <a href="<?php echo esc_url( network_admin_url( 'edit.php?post_type=prompt' ) ); ?>" class="button button-large">
+                        <?php esc_html_e( 'View All Prompts', 'prompts-library' ); ?>
+                    </a>
+                    <a href="<?php echo esc_url( network_admin_url( 'edit-tags.php?taxonomy=prompt_category&post_type=prompt' ) ); ?>" class="button button-large">
+                        <?php esc_html_e( 'Manage Categories', 'prompts-library' ); ?>
+                    </a>
                 </div>
             </div>
-
-            <h2><?php esc_html_e('Quick Actions','prompts-library'); ?></h2>
-            <p>
-                <a href="<?php echo esc_url( get_admin_url( get_main_site_id(), 'post-new.php?post_type=prompt' ) ); ?>" class="button button-primary"><?php esc_html_e('Add New Prompt','prompts-library'); ?></a>
-                <a href="<?php echo esc_url( get_admin_url( get_main_site_id(), 'edit.php?post_type=prompt' ) ); ?>" class="button"><?php esc_html_e('View All Prompts','prompts-library'); ?></a>
-                <a href="<?php echo esc_url( get_admin_url( get_main_site_id(), 'edit-tags.php?taxonomy=prompt_category&post_type=prompt' ) ); ?>" class="button"><?php esc_html_e('Manage Categories','prompts-library'); ?></a>
-            </p>
         </div>
         <?php
     }
 
-    public function render_network_all_prompts()   { $this->redirect_to_main_site_admin( 'edit.php?post_type=prompt' ); }
-    public function render_network_add_new()       { $this->redirect_to_main_site_admin( 'post-new.php?post_type=prompt' ); }
-    public function render_network_categories()    { $this->redirect_to_main_site_admin( 'edit-tags.php?taxonomy=prompt_category&post_type=prompt' ); }
-    public function render_network_tags()          { $this->redirect_to_main_site_admin( 'edit-tags.php?taxonomy=prompt_tag&post_type=prompt' ); }
+    /**
+     * Render settings page
+     */
+    public function render_settings_page() {
+        if ( isset( $_POST['prompts_library_settings_nonce'] ) && wp_verify_nonce( $_POST['prompts_library_settings_nonce'], 'prompts_library_settings' ) ) {
+            $settings = array(
+                'prompts_per_page' => isset( $_POST['prompts_per_page'] ) ? absint( $_POST['prompts_per_page'] ) : 9,
+                'cards_per_row' => isset( $_POST['cards_per_row'] ) ? absint( $_POST['cards_per_row'] ) : 3,
+            );
+            update_site_option( 'prompts_library_settings', $settings );
+            echo '<div class="notice notice-success"><p>' . esc_html__( 'Settings saved successfully!', 'prompts-library' ) . '</p></div>';
+        }
 
-    public function render_network_settings() {
-        // just reuse PL_Settings page renderer
-        PL_Settings::render_page();
+        $settings = get_site_option( 'prompts_library_settings', array(
+            'prompts_per_page' => 9,
+            'cards_per_row' => 3,
+        ) );
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e( 'Prompts Library Settings', 'prompts-library' ); ?></h1>
+            
+            <form method="post" action="">
+                <?php wp_nonce_field( 'prompts_library_settings', 'prompts_library_settings_nonce' ); ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="prompts_per_page"><?php esc_html_e( 'Prompts Per Page', 'prompts-library' ); ?></label>
+                        </th>
+                        <td>
+                            <input 
+                                type="number" 
+                                name="prompts_per_page" 
+                                id="prompts_per_page" 
+                                value="<?php echo esc_attr( $settings['prompts_per_page'] ); ?>" 
+                                min="3" 
+                                max="100" 
+                                class="small-text"
+                            />
+                            <p class="description"><?php esc_html_e( 'Number of prompt cards to display per page', 'prompts-library' ); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="cards_per_row"><?php esc_html_e( 'Cards Per Row', 'prompts-library' ); ?></label>
+                        </th>
+                        <td>
+                            <select name="cards_per_row" id="cards_per_row">
+                                <option value="2" <?php selected( $settings['cards_per_row'], 2 ); ?>>2</option>
+                                <option value="3" <?php selected( $settings['cards_per_row'], 3 ); ?>>3</option>
+                                <option value="4" <?php selected( $settings['cards_per_row'], 4 ); ?>>4</option>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'Number of cards to display per row', 'prompts-library' ); ?></p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button(); ?>
+            </form>
+        </div>
+        <?php
     }
 
     /**
-     * Site Admin menu. Main Site: management links present. Subsites: Viewer only.
+     * Render frontend page for tenant admins
      */
-    public function add_subsite_admin_menu() {
-        if ( is_network_admin() ) return;
-
-        add_menu_page(
-            __( 'Prompts Library', 'prompts-library' ),
-            __( 'Prompts Library', 'prompts-library' ),
-            'read',
-            'prompts-library-view',
-            array( $this, 'render_subsite_view' ),
-            'dashicons-editor-quote',
-            60
-        );
-
-        // On main site admin, add links to core CPT editors for convenience.
-        if ( is_main_site() ) {
-            add_submenu_page( 'prompts-library-view', __( 'All Prompts','prompts-library' ), __( 'All Prompts','prompts-library' ), 'edit_posts', 'pl-manage',
-                function() { wp_safe_redirect( admin_url( 'edit.php?post_type=prompt' ) ); exit; } );
-            add_submenu_page( 'prompts-library-view', __( 'Add New','prompts-library' ), __( 'Add New','prompts-library' ), 'edit_posts', 'pl-add',
-                function() { wp_safe_redirect( admin_url( 'post-new.php?post_type=prompt' ) ); exit; } );
-            add_submenu_page( 'prompts-library-view', __( 'Categories','prompts-library' ), __( 'Categories','prompts-library' ), 'manage_categories', 'pl-cats',
-                function() { wp_safe_redirect( admin_url( 'edit-tags.php?taxonomy=prompt_category&post_type=prompt' ) ); exit; } );
-            add_submenu_page( 'prompts-library-view', __( 'Tags','prompts-library' ), __( 'Tags','prompts-library' ), 'manage_categories', 'pl-tags',
-                function() { wp_safe_redirect( admin_url( 'edit-tags.php?taxonomy=prompt_tag&post_type=prompt' ) ); exit; } );
-        }
-    }
-
-    public function render_subsite_view() {
-        echo '<div class="wrap"><h1>'.esc_html__('Prompts Library','prompts-library').'</h1>';
-        echo do_shortcode('[prompts_library]');
-        echo '</div>';
+    public function render_frontend_page() {
+        // This will be handled by the frontend class
+        Prompts_Library_Frontend::render_library_page();
     }
 }
