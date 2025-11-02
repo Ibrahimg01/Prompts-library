@@ -132,19 +132,24 @@ class Prompts_Library_Admin_Menu {
                 $published_prompts = 0;
                 $draft_prompts     = 0;
 
-                if ( ! is_wp_error( $prompts_count ) && is_object( $prompts_count ) ) {
-                    $published_prompts = isset( $prompts_count->publish ) ? (int) $prompts_count->publish : 0;
-                    $draft_prompts     = isset( $prompts_count->draft ) ? (int) $prompts_count->draft : 0;
+                if ( ! is_wp_error( $prompts_count ) ) {
+                    $counts             = (array) $prompts_count;
+                    $published_prompts  = isset( $counts['publish'] ) ? (int) $counts['publish'] : 0;
+                    $draft_prompts      = isset( $counts['draft'] ) ? (int) $counts['draft'] : 0;
                 }
 
                 $categories_count = wp_count_terms( 'prompt_category', array( 'hide_empty' => false ) );
                 if ( is_wp_error( $categories_count ) ) {
                     $categories_count = 0;
+                } else {
+                    $categories_count = (int) $categories_count;
                 }
 
                 $tags_count = wp_count_terms( 'prompt_tag', array( 'hide_empty' => false ) );
                 if ( is_wp_error( $tags_count ) ) {
                     $tags_count = 0;
+                } else {
+                    $tags_count = (int) $tags_count;
                 }
                 ?>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px;">
