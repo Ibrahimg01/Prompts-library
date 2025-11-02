@@ -4,8 +4,8 @@
  * Plugin URI: Informationsystems.io
  * Description: A comprehensive prompts library system for WordPress Multisite with elegant UI and chatbot integration
  * Version: 1.0.0
- * Author: Learn With Hasan
- * Author URI: Information Systems
+ * Author: Information Systems
+ * Author URI: Informationsystems.io
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: prompts-library
