@@ -406,40 +406,7 @@ The plugin follows WordPress security best practices:
 7. **Consistent Formatting**: Use similar structure for prompt text
 8. **Color Coding**: Use consistent colors for related categories
 
-## 🤝 Support
 
-For support, feature requests, or bug reports:
-
-1. Check this README first
-2. Review the Troubleshooting section
-3. Check WordPress and PHP error logs
-4. Contact: support@learnwithhasan.com
-5. Visit: https://learnwithhasan.com
-
-## 📄 License
-
-This plugin is licensed under GPL v2 or later.
-
-Copyright (C) 2025 Learn With Hasan
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-## 🎓 Credits
-
-Developed by Learn With Hasan
-Website: https://learnwithhasan.com
-
----
-
-**Thank you for using Premium Prompts Library!** 🚀
 
 If you find this plugin helpful, please consider:
 - Rating it 5 stars ⭐⭐⭐⭐⭐
