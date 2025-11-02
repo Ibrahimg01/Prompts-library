@@ -77,8 +77,41 @@ class Prompts_Library {
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
         add_action( 'plugins_loaded', array( $this, 'bootstrap_components' ) );
         add_action( 'admin_init', array( $this, 'maybe_assign_capabilities' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_view_assets' ) );
         register_activation_hook( __FILE__, array( $this, 'activate' ) );
         register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
+    }
+
+    /**
+     * Enqueue assets for the subsite prompts library view.
+     *
+     * @param string $hook Current admin page hook suffix.
+     */
+    public function enqueue_admin_view_assets( $hook ) {
+        unset( $hook );
+
+        $page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+
+        if ( 'prompts-library-view' !== $page ) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'plp-admin-view',
+            PROMPTS_LIBRARY_PLUGIN_URL . 'assets/css/plp-admin-view.css',
+            array(),
+            '1.3.3'
+        );
+
+        wp_enqueue_script(
+            'plp-admin-view',
+            PROMPTS_LIBRARY_PLUGIN_URL . 'assets/js/plp-admin-view.js',
+            array(),
+            '1.3.3',
+            true
+        );
+
+        wp_add_inline_script( 'plp-admin-view', 'console.log("PL view assets loaded v1.3.3");' );
     }
 
     /**
