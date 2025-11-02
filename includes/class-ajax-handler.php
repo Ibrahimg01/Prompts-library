@@ -1,59 +1,93 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
+/**
+ * AJAX Handler
+ *
+ * @package Prompts_Library
+ */
 
-class PL_Ajax_Handler {
-    public function __construct() {
-        add_action( 'wp_ajax_pl_fetch_prompts', array( $this, 'fetch_prompts' ) );
-        add_action( 'wp_ajax_nopriv_pl_fetch_prompts', array( $this, 'fetch_prompts' ) );
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+/**
+ * AJAX Handler Class
+ */
+class Prompts_Library_Ajax_Handler {
+
+    /**
+     * Single instance
+     *
+     * @var Prompts_Library_Ajax_Handler
+     */
+    private static $instance = null;
+
+    /**
+     * Get instance
+     *
+     * @return Prompts_Library_Ajax_Handler
+     */
+    public static function get_instance() {
+        if ( null === self::$instance ) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 
-    public function fetch_prompts() {
-        check_ajax_referer( 'pl_fetch', 'nonce' );
+    /**
+     * Constructor
+     */
+    private function __construct() {
+        add_action( 'wp_ajax_get_prompt_details', array( $this, 'get_prompt_details' ) );
+    }
 
-        $category = isset($_POST['category']) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
-        $tag      = isset($_POST['tag'])      ? sanitize_text_field( wp_unslash( $_POST['tag'] ) )      : '';
+    /**
+     * Get prompt details via AJAX
+     */
+    public function get_prompt_details() {
+        check_ajax_referer( 'prompts_library_nonce', 'nonce' );
 
-        $main = function_exists('get_main_site_id') ? get_main_site_id() : 1;
-        switch_to_blog( $main );
-
-        $taxq = array();
-        if ( $category ) {
-            $taxq[] = array(
-                'taxonomy' => 'prompt_category',
-                'field'    => 'slug',
-                'terms'    => $category,
-            );
-        }
-        if ( $tag ) {
-            $taxq[] = array(
-                'taxonomy' => 'prompt_tag',
-                'field'    => 'slug',
-                'terms'    => $tag,
-            );
+        if ( ! isset( $_POST['prompt_id'] ) ) {
+            wp_send_json_error( array( 'message' => __( 'Prompt ID is required', 'prompts-library' ) ) );
         }
 
-        $q = new WP_Query( array(
-            'post_type'      => 'prompt',
-            'posts_per_page' => 9,
-            'post_status'    => 'publish',
-            'tax_query'      => $taxq,
-        ) );
+        $prompt_id = absint( $_POST['prompt_id'] );
 
-        $cards = array();
-        if ( $q->have_posts() ) {
-            while ( $q->have_posts() ) {
-                $q->the_post();
-                $cards[] = array(
-                    'title' => get_the_title(),
-                    'excerpt' => wp_trim_words( get_the_content(), 30 ),
-                    'link'  => get_permalink(),
+        // Switch to main site to get the prompt
+        switch_to_blog( get_main_site_id() );
+        
+        $prompt = get_post( $prompt_id );
+
+        if ( ! $prompt || 'prompt' !== $prompt->post_type ) {
+            restore_current_blog();
+            wp_send_json_error( array( 'message' => __( 'Prompt not found', 'prompts-library' ) ) );
+        }
+
+        $description = get_post_meta( $prompt_id, '_prompt_description', true );
+        $prompt_text = get_post_meta( $prompt_id, '_prompt_text', true );
+        $categories = get_the_terms( $prompt_id, 'prompt_category' );
+
+        $category_data = array();
+        if ( $categories && ! is_wp_error( $categories ) ) {
+            foreach ( $categories as $cat ) {
+                $cat_color = get_term_meta( $cat->term_id, 'category_color', true );
+                if ( empty( $cat_color ) ) {
+                    $cat_color = '#8b5cf6';
+                }
+                $category_data[] = array(
+                    'name' => $cat->name,
+                    'color' => $cat_color,
                 );
             }
-            wp_reset_postdata();
         }
 
         restore_current_blog();
 
-        wp_send_json_success( array( 'cards' => $cards ) );
+        wp_send_json_success( array(
+            'title' => $prompt->post_title,
+            'description' => $description,
+            'prompt_text' => $prompt_text,
+            'categories' => $category_data,
+        ) );
     }
 }
