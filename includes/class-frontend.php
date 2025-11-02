@@ -94,19 +94,12 @@ class Prompts_Library_Frontend {
 
         // Build query
         $args = array(
-            'post_type' => 'prompt',
-            'post_status' => 'publish',
+            'post_type'      => 'prompt',
+            'post_status'    => 'publish',
             'posts_per_page' => $settings['prompts_per_page'],
-            'paged' => $paged,
-            'orderby' => 'menu_order',
-            'order' => 'ASC',
-            'meta_query' => array(
-                array(
-                    'key' => '_published_sites',
-                    'value' => sprintf( '"%d"', $current_site_id ),
-                    'compare' => 'LIKE',
-                ),
-            ),
+            'paged'          => $paged,
+            'orderby'        => 'menu_order',
+            'order'          => 'ASC',
         );
 
         if ( ! empty( $search ) ) {
@@ -136,6 +129,70 @@ class Prompts_Library_Frontend {
 
         // Switch to main site to get prompts
         switch_to_blog( get_main_site_id() );
+
+        $all_prompt_ids = get_posts(
+            array(
+                'post_type'   => 'prompt',
+                'post_status' => 'publish',
+                'numberposts' => -1,
+                'meta_key'    => 'pl_publish_all',
+                'meta_value'  => '1',
+                'fields'      => 'ids',
+            )
+        );
+
+        $targeted_prompt_ids = get_posts(
+            array(
+                'post_type'   => 'prompt',
+                'post_status' => 'publish',
+                'numberposts' => -1,
+                'fields'      => 'ids',
+                'meta_query'  => array(
+                    array(
+                        'key'     => 'pl_publish_sites',
+                        'value'   => '"' . $current_site_id . '"',
+                        'compare' => 'LIKE',
+                    ),
+                ),
+            )
+        );
+
+        $legacy_prompt_ids = get_posts(
+            array(
+                'post_type'   => 'prompt',
+                'post_status' => 'publish',
+                'numberposts' => -1,
+                'fields'      => 'ids',
+                'meta_query'  => array(
+                    array(
+                        'key'     => '_published_sites',
+                        'value'   => '"' . $current_site_id . '"',
+                        'compare' => 'LIKE',
+                    ),
+                ),
+            )
+        );
+
+        $all_prompt_ids      = array_map( 'intval', $all_prompt_ids );
+        $targeted_prompt_ids = array_map( 'intval', $targeted_prompt_ids );
+        $legacy_prompt_ids   = array_map( 'intval', $legacy_prompt_ids );
+
+        if ( ! empty( $all_prompt_ids ) && ! empty( $targeted_prompt_ids ) ) {
+            $targeted_prompt_ids = array_diff( $targeted_prompt_ids, $all_prompt_ids );
+        }
+
+        $allowed_ids = array_values(
+            array_unique(
+                array_merge( $all_prompt_ids, $targeted_prompt_ids, $legacy_prompt_ids )
+            )
+        );
+
+        if ( empty( $allowed_ids ) ) {
+            $allowed_ids = array( 0 );
+        }
+
+        $args['post__in'] = $allowed_ids;
+
         $query = new WP_Query( $args );
         $categories = get_terms( array( 'taxonomy' => 'prompt_category', 'hide_empty' => true ) );
         $tags = get_terms( array( 'taxonomy' => 'prompt_tag', 'hide_empty' => true ) );

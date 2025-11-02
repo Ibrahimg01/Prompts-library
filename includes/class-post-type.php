@@ -218,38 +218,61 @@ class Prompts_Library_Post_Type {
      * Render publish sites meta box
      */
     public function render_publish_sites_meta_box( $post ) {
-        $published_sites = get_post_meta( $post->ID, '_published_sites', true );
-        if ( ! is_array( $published_sites ) ) {
-            $published_sites = array();
+        $all    = (int) get_post_meta( $post->ID, 'pl_publish_all', true );
+        $chosen = get_post_meta( $post->ID, 'pl_publish_sites', true );
+
+        if ( ! is_array( $chosen ) ) {
+            $chosen = array();
         }
 
-        $sites = get_sites( array( 'number' => 1000 ) );
+        if ( empty( $chosen ) ) {
+            $legacy = get_post_meta( $post->ID, '_published_sites', true );
+            if ( is_array( $legacy ) && ! empty( $legacy ) ) {
+                $chosen = array_values( array_map( 'absint', $legacy ) );
+            }
+        }
+
+        $sites = get_sites( array( 'number' => 0 ) );
         ?>
-        <div class="publish-sites-meta-box">
-            <p style="margin-bottom: 10px;">
-                <strong><?php esc_html_e( 'Select sites to publish this prompt:', 'prompts-library' ); ?></strong>
-            </p>
-            <?php foreach ( $sites as $site ) : ?>
-                <?php
-                $site_details = get_blog_details( $site->blog_id );
-                $checked = in_array( $site->blog_id, $published_sites, true ) ? 'checked' : '';
+        <p style="margin-bottom:8px;">
+            <label>
+                <input type="checkbox" name="pl_publish_all" value="1" <?php checked( $all, 1 ); ?>>
+                <strong><?php esc_html_e( 'Publish to ALL sites', 'prompts-library' ); ?></strong>
+            </label>
+        </p>
+
+        <div id="pl-sites-list" style="<?php echo $all ? 'opacity:.5;pointer-events:none;' : ''; ?>">
+            <?php foreach ( $sites as $site ) :
+                $bid   = (int) $site->blog_id;
+                $label = esc_html( $site->domain . $site->path );
                 ?>
-                <p style="margin: 5px 0;">
-                    <label>
-                        <input 
-                            type="checkbox" 
-                            name="published_sites[]" 
-                            value="<?php echo esc_attr( $site->blog_id ); ?>"
-                            <?php echo $checked; ?>
-                        />
-                        <?php echo esc_html( $site_details->blogname ); ?>
-                        <span style="color: #666; font-size: 12px;">
-                            (<?php echo esc_html( $site_details->domain . $site_details->path ); ?>)
-                        </span>
-                    </label>
-                </p>
+                <label style="display:block;margin:4px 0;">
+                    <input
+                        type="checkbox"
+                        name="pl_publish_sites[]"
+                        value="<?php echo esc_attr( $bid ); ?>"
+                        <?php checked( in_array( $bid, $chosen, true ) ); ?>
+                    >
+                    <?php echo $label; ?>
+                </label>
             <?php endforeach; ?>
         </div>
+
+        <?php wp_nonce_field( 'pl_save_publish_sites', 'pl_publish_sites_nonce' ); ?>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          const all = document.querySelector('input[name="pl_publish_all"]');
+          const box = document.getElementById('pl-sites-list');
+          if (!all || !box) return;
+          function toggle() {
+            if (all.checked) { box.style.opacity = .5; box.style.pointerEvents = 'none'; }
+            else { box.style.opacity = 1; box.style.pointerEvents = ''; }
+          }
+          all.addEventListener('change', toggle);
+          toggle();
+        });
+        </script>
         <?php
     }
 
@@ -282,12 +305,25 @@ class Prompts_Library_Post_Type {
             update_post_meta( $post_id, '_prompt_description', sanitize_textarea_field( $_POST['prompt_description'] ) );
         }
 
-        // Save published sites (only on main site)
-        if ( is_main_site() && isset( $_POST['published_sites'] ) ) {
-            $published_sites = array_map( 'intval', $_POST['published_sites'] );
-            update_post_meta( $post_id, '_published_sites', $published_sites );
-        } elseif ( is_main_site() ) {
-            update_post_meta( $post_id, '_published_sites', array() );
+        // Save publish-to-sites settings (only on main site)
+        if ( is_main_site() ) {
+            $nonce = isset( $_POST['pl_publish_sites_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['pl_publish_sites_nonce'] ) ) : '';
+
+            if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'pl_save_publish_sites' ) ) {
+                $all = ! empty( $_POST['pl_publish_all'] ) ? 1 : 0;
+                update_post_meta( $post_id, 'pl_publish_all', $all );
+
+                $sites = array();
+                if ( ! $all && isset( $_POST['pl_publish_sites'] ) ) {
+                    $sites = array_map( 'absint', (array) wp_unslash( $_POST['pl_publish_sites'] ) );
+                    $sites = array_values( array_unique( array_filter( $sites ) ) );
+                }
+
+                update_post_meta( $post_id, 'pl_publish_sites', $sites );
+
+                // Maintain legacy meta for backward compatibility with older versions.
+                update_post_meta( $post_id, '_published_sites', $all ? array() : $sites );
+            }
         }
     }
 
@@ -336,7 +372,19 @@ class Prompts_Library_Post_Type {
                 break;
 
             case 'published_sites':
-                $published_sites = get_post_meta( $post_id, '_published_sites', true );
+                $all = (int) get_post_meta( $post_id, 'pl_publish_all', true );
+
+                if ( 1 === $all ) {
+                    esc_html_e( 'All sites', 'prompts-library' );
+                    break;
+                }
+
+                $published_sites = get_post_meta( $post_id, 'pl_publish_sites', true );
+
+                if ( ! is_array( $published_sites ) || empty( $published_sites ) ) {
+                    $published_sites = get_post_meta( $post_id, '_published_sites', true );
+                }
+
                 if ( is_array( $published_sites ) && ! empty( $published_sites ) ) {
                     echo esc_html( count( $published_sites ) ) . ' ' . esc_html__( 'sites', 'prompts-library' );
                 } else {

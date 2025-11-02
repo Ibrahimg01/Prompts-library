@@ -294,7 +294,9 @@ The plugin uses:
 - **Post Meta**:
   - `_prompt_text` - The actual prompt
   - `_prompt_description` - Short description
-  - `_published_sites` - Array of site IDs
+  - `pl_publish_all` - Whether the prompt is published to every site in the network
+  - `pl_publish_sites` - Array of site IDs when the prompt is targeted to specific subsites
+  - `_published_sites` - Legacy array of site IDs retained for backward compatibility
 - **Term Meta**:
   - `category_color` - Hex color for category badge
 - **Site Options**:
