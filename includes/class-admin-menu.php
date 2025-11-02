@@ -128,14 +128,30 @@ class Prompts_Library_Admin_Menu {
             <div class="prompts-dashboard">
                 <?php
                 $prompts_count = wp_count_posts( 'prompt' );
-                $categories_count = wp_count_terms( array( 'taxonomy' => 'prompt_category' ) );
-                $tags_count = wp_count_terms( array( 'taxonomy' => 'prompt_tag' ) );
+
+                $published_prompts = 0;
+                $draft_prompts     = 0;
+
+                if ( ! is_wp_error( $prompts_count ) && is_object( $prompts_count ) ) {
+                    $published_prompts = isset( $prompts_count->publish ) ? (int) $prompts_count->publish : 0;
+                    $draft_prompts     = isset( $prompts_count->draft ) ? (int) $prompts_count->draft : 0;
+                }
+
+                $categories_count = wp_count_terms( 'prompt_category', array( 'hide_empty' => false ) );
+                if ( is_wp_error( $categories_count ) ) {
+                    $categories_count = 0;
+                }
+
+                $tags_count = wp_count_terms( 'prompt_tag', array( 'hide_empty' => false ) );
+                if ( is_wp_error( $tags_count ) ) {
+                    $tags_count = 0;
+                }
                 ?>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px;">
                     <div style="background: #fff; padding: 20px; border-left: 4px solid #8b5cf6; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <h3 style="margin: 0 0 10px 0; color: #0D0D2B;"><?php esc_html_e( 'Total Prompts', 'prompts-library' ); ?></h3>
                         <p style="font-size: 32px; font-weight: 700; margin: 0; color: #8b5cf6;">
-                            <?php echo esc_html( $prompts_count->publish + $prompts_count->draft ); ?>
+                            <?php echo esc_html( $published_prompts + $draft_prompts ); ?>
                         </p>
                     </div>
                     <div style="background: #fff; padding: 20px; border-left: 4px solid #f65c4b; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">

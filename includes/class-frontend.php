@@ -141,6 +141,32 @@ class Prompts_Library_Frontend {
         $tags = get_terms( array( 'taxonomy' => 'prompt_tag', 'hide_empty' => true ) );
         restore_current_blog();
 
+        if ( is_wp_error( $categories ) || ! is_array( $categories ) ) {
+            $categories = array();
+        } else {
+            $categories = array_values(
+                array_filter(
+                    $categories,
+                    function ( $term ) {
+                        return $term instanceof WP_Term;
+                    }
+                )
+            );
+        }
+
+        if ( is_wp_error( $tags ) || ! is_array( $tags ) ) {
+            $tags = array();
+        } else {
+            $tags = array_values(
+                array_filter(
+                    $tags,
+                    function ( $term ) {
+                        return $term instanceof WP_Term;
+                    }
+                )
+            );
+        }
+
         ?>
         <div class="wrap prompts-library-wrap">
             <!-- Header Container -->
