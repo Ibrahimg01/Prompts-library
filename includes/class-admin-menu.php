@@ -38,10 +38,14 @@ class Prompts_Library_Admin_Menu {
      * Constructor
      */
     private function __construct() {
-        if ( is_main_site() ) {
-            add_action( 'network_admin_menu', array( $this, 'add_network_admin_menu' ) );
+        if ( is_multisite() ) {
+            if ( is_network_admin() ) {
+                add_action( 'network_admin_menu', array( $this, 'add_network_admin_menu' ) );
+            }
+
+            add_action( 'admin_menu', array( $this, 'add_multisite_admin_menus' ) );
         } else {
-            add_action( 'admin_menu', array( $this, 'add_subsite_admin_menu' ) );
+            add_action( 'admin_menu', array( $this, 'add_single_site_admin_menu' ) );
         }
     }
 
@@ -64,7 +68,8 @@ class Prompts_Library_Admin_Menu {
             __( 'All Prompts', 'prompts-library' ),
             __( 'All Prompts', 'prompts-library' ),
             'manage_network',
-            'edit.php?post_type=prompt'
+            'prompts-library-all-prompts',
+            array( $this, 'redirect_to_all_prompts' )
         );
 
         add_submenu_page(
@@ -72,7 +77,8 @@ class Prompts_Library_Admin_Menu {
             __( 'Add New', 'prompts-library' ),
             __( 'Add New', 'prompts-library' ),
             'manage_network',
-            'post-new.php?post_type=prompt'
+            'prompts-library-add-new',
+            array( $this, 'redirect_to_add_new_prompt' )
         );
 
         add_submenu_page(
@@ -80,7 +86,8 @@ class Prompts_Library_Admin_Menu {
             __( 'Categories', 'prompts-library' ),
             __( 'Categories', 'prompts-library' ),
             'manage_network',
-            'edit-tags.php?taxonomy=prompt_category&post_type=prompt'
+            'prompts-library-categories',
+            array( $this, 'redirect_to_categories' )
         );
 
         add_submenu_page(
@@ -88,7 +95,8 @@ class Prompts_Library_Admin_Menu {
             __( 'Tags', 'prompts-library' ),
             __( 'Tags', 'prompts-library' ),
             'manage_network',
-            'edit-tags.php?taxonomy=prompt_tag&post_type=prompt'
+            'prompts-library-tags',
+            array( $this, 'redirect_to_tags' )
         );
 
         add_submenu_page(
@@ -102,18 +110,88 @@ class Prompts_Library_Admin_Menu {
     }
 
     /**
-     * Add subsite admin menu (Tenant Admin)
+     * Add admin menus for single-site installs.
      */
-    public function add_subsite_admin_menu() {
+    public function add_single_site_admin_menu() {
         add_menu_page(
             __( 'Prompts Library', 'prompts-library' ),
             __( 'Prompts Library', 'prompts-library' ),
-            'edit_posts',
-            'prompts-library-view',
-            array( $this, 'render_frontend_page' ),
+            'edit_prompts',
+            'edit.php?post_type=prompt',
+            '',
             'dashicons-editor-quote',
             30
         );
+    }
+
+    /**
+     * Add admin menus for multisite installs.
+     */
+    public function add_multisite_admin_menus() {
+        if ( is_main_site() ) {
+            add_menu_page(
+                __( 'Prompts Library', 'prompts-library' ),
+                __( 'Prompts Library', 'prompts-library' ),
+                'edit_prompts',
+                'edit.php?post_type=prompt',
+                '',
+                'dashicons-editor-quote',
+                30
+            );
+        } else {
+            add_menu_page(
+                __( 'Prompts Library', 'prompts-library' ),
+                __( 'Prompts Library', 'prompts-library' ),
+                'edit_posts',
+                'prompts-library-view',
+                array( $this, 'render_frontend_page' ),
+                'dashicons-editor-quote',
+                30
+            );
+        }
+    }
+
+    /**
+     * Redirect to the main site's prompt list.
+     */
+    public function redirect_to_all_prompts() {
+        wp_safe_redirect( $this->get_main_site_admin_url( 'edit.php?post_type=prompt' ) );
+        exit;
+    }
+
+    /**
+     * Redirect to the add new prompt screen.
+     */
+    public function redirect_to_add_new_prompt() {
+        wp_safe_redirect( $this->get_main_site_admin_url( 'post-new.php?post_type=prompt' ) );
+        exit;
+    }
+
+    /**
+     * Redirect to the prompt categories screen.
+     */
+    public function redirect_to_categories() {
+        wp_safe_redirect( $this->get_main_site_admin_url( 'edit-tags.php?taxonomy=prompt_category&post_type=prompt' ) );
+        exit;
+    }
+
+    /**
+     * Redirect to the prompt tags screen.
+     */
+    public function redirect_to_tags() {
+        wp_safe_redirect( $this->get_main_site_admin_url( 'edit-tags.php?taxonomy=prompt_tag&post_type=prompt' ) );
+        exit;
+    }
+
+    /**
+     * Helper to build admin URLs for the main site.
+     *
+     * @param string $path Relative admin path.
+     *
+     * @return string
+     */
+    private function get_main_site_admin_url( $path ) {
+        return get_admin_url( get_main_site_id(), $path );
     }
 
     /**
@@ -175,13 +253,13 @@ class Prompts_Library_Admin_Menu {
 
                 <div style="margin-top: 30px;">
                     <h2><?php esc_html_e( 'Quick Actions', 'prompts-library' ); ?></h2>
-                    <a href="<?php echo esc_url( network_admin_url( 'post-new.php?post_type=prompt' ) ); ?>" class="button button-primary button-large">
+                    <a href="<?php echo esc_url( $this->get_main_site_admin_url( 'post-new.php?post_type=prompt' ) ); ?>" class="button button-primary button-large">
                         <?php esc_html_e( 'Add New Prompt', 'prompts-library' ); ?>
                     </a>
-                    <a href="<?php echo esc_url( network_admin_url( 'edit.php?post_type=prompt' ) ); ?>" class="button button-large">
+                    <a href="<?php echo esc_url( $this->get_main_site_admin_url( 'edit.php?post_type=prompt' ) ); ?>" class="button button-large">
                         <?php esc_html_e( 'View All Prompts', 'prompts-library' ); ?>
                     </a>
-                    <a href="<?php echo esc_url( network_admin_url( 'edit-tags.php?taxonomy=prompt_category&post_type=prompt' ) ); ?>" class="button button-large">
+                    <a href="<?php echo esc_url( $this->get_main_site_admin_url( 'edit-tags.php?taxonomy=prompt_category&post_type=prompt' ) ); ?>" class="button button-large">
                         <?php esc_html_e( 'Manage Categories', 'prompts-library' ); ?>
                     </a>
                 </div>

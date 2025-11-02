@@ -46,9 +46,35 @@ class Prompts_Library_Post_Type {
     }
 
     /**
+     * Retrieve the capability map used by the post type.
+     *
+     * @return array
+     */
+    public static function get_capability_map() {
+        return array(
+            'edit_post'              => 'edit_prompt',
+            'read_post'              => 'read_prompt',
+            'delete_post'            => 'delete_prompt',
+            'edit_posts'             => 'edit_prompts',
+            'edit_others_posts'      => 'edit_others_prompts',
+            'publish_posts'          => 'publish_prompts',
+            'read_private_posts'     => 'read_private_prompts',
+            'delete_posts'           => 'delete_prompts',
+            'delete_private_posts'   => 'delete_private_prompts',
+            'delete_published_posts' => 'delete_published_prompts',
+            'delete_others_posts'    => 'delete_others_prompts',
+            'edit_private_posts'     => 'edit_private_prompts',
+            'edit_published_posts'   => 'edit_published_prompts',
+            'create_posts'           => 'create_prompts',
+        );
+    }
+
+    /**
      * Register custom post type
      */
     public static function register_post_type() {
+        $is_main_site = is_main_site();
+
         $labels = array(
             'name'                  => _x( 'Prompts', 'Post Type General Name', 'prompts-library' ),
             'singular_name'         => _x( 'Prompt', 'Post Type Singular Name', 'prompts-library' ),
@@ -86,7 +112,7 @@ class Prompts_Library_Post_Type {
             'supports'              => array( 'title', 'editor', 'page-attributes' ),
             'hierarchical'          => false,
             'public'                => false,
-            'show_ui'               => true,
+            'show_ui'               => $is_main_site,
             'show_in_menu'          => false,
             'show_in_admin_bar'     => true,
             'show_in_nav_menus'     => false,
@@ -94,7 +120,9 @@ class Prompts_Library_Post_Type {
             'has_archive'           => false,
             'exclude_from_search'   => true,
             'publicly_queryable'    => false,
-            'capability_type'       => 'post',
+            'capability_type'       => array( 'prompt', 'prompts' ),
+            'map_meta_cap'          => true,
+            'capabilities'          => self::get_capability_map(),
             'show_in_rest'          => false,
             'menu_icon'             => 'dashicons-editor-quote',
         );
